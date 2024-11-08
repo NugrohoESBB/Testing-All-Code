@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- CSS boostrap Online -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital@1&display=swap" rel="stylesheet">
+
+    <!-- use Raspberry -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" type=text/css href="{{ url_for('static', filename='bootstrap.min.css') }}">
+    <script src="{{ url_for('static', filename='boostrap.bundle.min.js') }}"></script>
+    <!-- local variable -->
+    
+    <!-- Ajax -->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+
+    <title>Live Streaming</title>
+  </head>
+  <!-- Body -->
+
+  <body>
+
+    <h2 class="second-judul text-center">Robot Personal Assistant Security
+      <hr>
+    </h2>
+    <h4 class="cam">Camera</h4>
+    <div class="container-fluid">
+      <picture class="pic">
+
+        <!-- do not disable -->
+        <img src="{{ url_for('video_feed')}}" class="img-thumbnail text-center"
+          alt="No Response!. Please Check Your WebCam!">
+      </picture>
+    </div>
+    <div class="container">
+      <h4 class="text-center">Controller</h4>
+      <div class="rows">
+        <div class="col-8">
+          <a href="#" id="maju"><button type="button" class="btn btn-secondary">Maju</i></button></a>
+        </div>
+      </div>
+      <br>
+      <!-- Awal -->
+      <div class="row">
+        <div class="col-6">
+          <a href="#" id="kiri"><button type="button" class="btn btn-secondary"> Kiri</button></a>
+        </div>
+        <div class="col-6">
+          <a href="#" id="kanan"><button type="button" class="btn btn-secondary"> kanan</button> </a>
+        </div>
+      </div>
+      <br>
+      <div class="row">
+        <div class="col-8">
+          <a href="#" id="mundur"><button type="button" class="btn btn-secondary">Mundur</button></a>
+        </div>
+      </div>
+      <br>
+      <div class="utility">
+        <a href="#" id="berhenti"><button type="button" class="btn btn-danger">Berhenti </button></a>
+        <a href="#" id="refresh"><button type="button" class="btn btn-warning refresh ">Shutdown Raspberry</button></a>
+      </div>
+      <br>
+    </div>
+    <div class="jumbotron-fluid">
+      <footer class="footer">
+        <h6 class="foo">
+          <img src="{{ url_for('static', filename='logo.jpg') }}" alt="UG-Muro" class="logo" />Copyright &copy; 2023.
+          Laboratorium Multimedia & Robotika Universitas Gunadarma</h6>
+      </footer>
+    </div>
+    <!-- Javascript components -->
+    <script src="{{ url_for('static', filename='index.js') }}"></script>
+    </script>
+  </body>
+
+</html>
