@@ -28,7 +28,8 @@ DHT dht(DHT_PIN, DHTTYPE);
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 // Define thresholds
-float minTemp = 33.0, maxTemp = 35.0, currentTemp, humidity;
+float minTemp = 33.0, maxTemp = 35.0, currentTemp, humidity, CtFahreinheit, heatIndex;
+String formattedTemp, formattedHumidity, formattedFahreinheit, formattedHeatIndex;
 int soundThreshold = 500, soundLevel;
 bool fanOn = false, motionDetected;
 
@@ -40,6 +41,68 @@ WiFiClient client;
 elapsedMillis sensorMillis;
 elapsedMillis displayMillis;
 elapsedMillis thingSpeakMillis;
+
+float calculateHeatIndex(float CtFahreinheit, float humidity) {
+  // Rumus empiris untuk perhitungan Heat Index dalam Fahrenheit
+  heatIndex = -42.379 + 2.04901523 * CtFahreinheit + 10.14333127 * humidity 
+                    - 0.22475541 * CtFahreinheit * humidity 
+                    - 0.00683783 * CtFahreinheit * CtFahreinheit 
+                    - 0.05481717 * humidity * humidity 
+                    + 0.00122874 * CtFahreinheit * CtFahreinheit * humidity 
+                    + 0.00085282 * CtFahreinheit * humidity * humidity 
+                    - 0.00000199 * CtFahreinheit * CtFahreinheit * humidity * humidity;
+  
+  // Penyesuaian untuk kelembapan rendah atau tinggi
+  if (humidity < 13 && (CtFahreinheit >= 80.0 && CtFahreinheit <= 112.0)) {
+    heatIndex -= ((13 - humidity) / 4) * sqrt((17 - abs(CtFahreinheit - 95.0)) / 17);
+  } else if (humidity > 85 && (CtFahreinheit >= 80.0 && CtFahreinheit <= 87.0)) {
+    heatIndex += ((humidity - 85) / 10) * ((87 - CtFahreinheit) / 5);
+  }
+
+  return heatIndex;
+}
+
+void workingConditions() {
+  if (motionDetected) {
+    Serial.println("Motion detected! Baby is moving excessively.");
+    triggerBuzzer();
+  }
+
+  // Check temperature range and control the fan
+  if (currentTemp > maxTemp) {
+    Serial.println("Temperature too high! Turning on the fan.");
+    activateFan();
+  } else if (currentTemp < minTemp && fanOn) {
+    Serial.println("Temperature back to normal. Turning off the fan.");
+    deactivateFan();
+  }
+
+  // Check if sound level exceeds threshold (baby crying)
+  if (soundLevel > soundThreshold) {
+    Serial.println("Baby crying detected! Triggering buzzer.");
+    triggerBuzzer();
+  }
+}
+
+// Function to activate the fan via relay
+void activateFan() {
+  digitalWrite(RELAY_IN1_PIN, HIGH);  // Turn on fan
+  digitalWrite(RELAY_IN2_PIN, LOW);   // Ensure correct polarity
+  fanOn = true;
+}
+
+// Function to deactivate the fan
+void deactivateFan() {
+  digitalWrite(RELAY_IN1_PIN, LOW);  // Turn off fan
+  fanOn = false;
+}
+
+// Function to trigger the buzzer when the baby is crying or moving excessively
+void triggerBuzzer() {
+  digitalWrite(BUZZER_PIN, HIGH);  // Turn on buzzer
+  delay(1000);                     // Buzzer sounds for 1 second
+  digitalWrite(BUZZER_PIN, LOW);   // Turn off buzzer
+}
 
 void setup() {
   Serial.begin(115200);
@@ -88,7 +151,15 @@ void loop() {
     humidity = dht.readHumidity();
     soundLevel = analogRead(SOUND_PIN);
     motionDetected = digitalRead(PIR_PIN);
+
+    CtFahreinheit = (currentTemp * 9.0/5.0) + 32.0;
     delay(10);
+    heatIndex = calculateHeatIndex(CtFahreinheit, humidity);
+
+    formattedTemp = String(currentTemp, 2);
+    formattedHumidity = String(humidity, 2);
+    formattedFahreinheit = String(CtFahreinheit, 2);
+    formattedHeatIndex = String(heatIndex, 2);
 
     Serial.println("Suhu DHT    : " + String(currentTemp) + "°C");
     Serial.println("Humidity    : " + String(humidity) + "%");
@@ -110,8 +181,11 @@ void loop() {
   }
 
   if (thingSpeakMillis >= thingSpeakInterval) {
-    ThingSpeak.setField(1, currentTemp);
-    ThingSpeak.setField(2, humidity);
+    ThingSpeak.setField(1, formattedTemp);
+    ThingSpeak.setField(2, formattedTemp);
+    ThingSpeak.setField(3, formattedFahreinheit);
+    ThingSpeak.setField(4, formattedHeatIndex);
+    ThingSpeak.setField(5, formattedHumidity);
 
     int APIwait = ThingSpeak.writeFields(channelID, writeAPIKey);
     
@@ -123,46 +197,4 @@ void loop() {
 
     thingSpeakMillis = 0;
   }
-}
-
-void workingConditions() {
-  if (motionDetected) {
-    Serial.println("Motion detected! Baby is moving excessively.");
-    triggerBuzzer();
-  }
-
-  // Check temperature range and control the fan
-  if (currentTemp > maxTemp) {
-    Serial.println("Temperature too high! Turning on the fan.");
-    activateFan();
-  } else if (currentTemp < minTemp && fanOn) {
-    Serial.println("Temperature back to normal. Turning off the fan.");
-    deactivateFan();
-  }
-
-  // Check if sound level exceeds threshold (baby crying)
-  if (soundLevel > soundThreshold) {
-    Serial.println("Baby crying detected! Triggering buzzer.");
-    triggerBuzzer();
-  }
-}
-
-// Function to activate the fan via relay
-void activateFan() {
-  digitalWrite(RELAY_IN1_PIN, HIGH);  // Turn on fan
-  digitalWrite(RELAY_IN2_PIN, LOW);   // Ensure correct polarity
-  fanOn = true;
-}
-
-// Function to deactivate the fan
-void deactivateFan() {
-  digitalWrite(RELAY_IN1_PIN, LOW);  // Turn off fan
-  fanOn = false;
-}
-
-// Function to trigger the buzzer when the baby is crying or moving excessively
-void triggerBuzzer() {
-  digitalWrite(BUZZER_PIN, HIGH);  // Turn on buzzer
-  delay(1000);                     // Buzzer sounds for 1 second
-  digitalWrite(BUZZER_PIN, LOW);   // Turn off buzzer
 }
