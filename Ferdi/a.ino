@@ -50,7 +50,6 @@ void dsValue(void) {
     delay(250);
     return;
   }
-  
 
   if (OneWire::crc8(addr1, 7) != addr1[7]) {
     Serial.println("CRC is not valid!");
@@ -70,11 +69,6 @@ void dsValue(void) {
       type_s1 = 0;
       break;
     default:
-      lcd.clear();
-      lcd.setCursor(0,1);
-      lcd.print("Not Found");
-      delay(2000);
-      lcd.clear();
       Serial.println("Device is not a DS18x20 family device.");
       return;
   } 
@@ -98,8 +92,7 @@ void dsValue(void) {
   if (type_s1) {
     // 9 bit resolution default
     raw1 = raw1 << 3;
-    if (data1[7] == 0x10) 
-    {
+    if (data1[7] == 0x10) {
       raw1 = (raw1 & 0xFFF0) + 12 - data1[6];
     }
   } else {
@@ -110,8 +103,8 @@ void dsValue(void) {
     else if (cfg1 == 0x20) raw1 = raw1 & ~3;
     // 11 bit res, 375 ms
     else if (cfg1 == 0x40) raw1 = raw1 & ~1;
-    
   }
+  
   currentTempDS = (float)raw1 / 16.0;
 }
 
