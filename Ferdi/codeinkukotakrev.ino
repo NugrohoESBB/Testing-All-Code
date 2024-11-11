@@ -1,7 +1,7 @@
-#include <WiFi.h>
-#include <Adafruit_Sensor.h>
 #include <DHT.h>
+#include <WiFi.h>
 #include <Wire.h>
+#include <Adafruit_Sensor.h>
 #include <LiquidCrystal_I2C.h>
 
 const char* ssid = "UGMURO-INET";
@@ -22,7 +22,7 @@ const char* password = "Gepuk15000";
 DHT dht(DHT_PIN, DHTTYPE);
 
 // LCD setup: Address 0x27, 16 columns and 2 rows
-LiquidCrystal_I2C lcd(0x27, 16, 2);
+LiquidCrystal_I2C lcd(0x26, 16, 2);
 
 // Define thresholds
 float minTemp = 33.0;  
@@ -30,17 +30,18 @@ float maxTemp = 35.0;
 int soundThreshold = 500;  
 
 // Variables
-float currentTemp;
-float humidity;
+float currentTemp, humidity;
 int soundLevel;
 bool fanOn = false;
 
 void setup() {
   Serial.begin(115200);
   
-  // Initialize DHT sensor
   dht.begin();
-  
+  //lcd.begin();
+  lcd.init();
+  lcd.backlight();
+
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
@@ -63,9 +64,6 @@ void setup() {
   digitalWrite(RELAY_IN2_PIN, LOW);
   digitalWrite(BUZZER_PIN, LOW);
 
-  // Initialize the LCD and turn on the backlight
-  lcd.begin();
-  lcd.backlight();
 
   // Display startup message
   lcd.setCursor(0, 0);
