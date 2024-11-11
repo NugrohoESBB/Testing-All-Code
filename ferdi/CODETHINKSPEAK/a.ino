@@ -19,7 +19,7 @@
 
 const char* ssid              = "UGMURO-INET";
 const char* password          = "Gepuk15000";
-const char* writeAPIKey       = "L1JFXC6ULNYU577E";
+const char* APIKey            = "L1JFXC6ULNYU577E";
 const unsigned long channelID = 2732118;
 
 #define DHTTYPE DHT21
@@ -96,7 +96,8 @@ void dsValue(void) {
   // Convert the data to actual temperature
   int16_t raw1 = (data1[1] << 8) | data1[0];
   if (type_s1) {
-    raw1 = raw1 << 3; // 9 bit resolution default
+    // 9 bit resolution default
+    raw1 = raw1 << 3;
     if (data1[7] == 0x10) 
     {
       raw1 = (raw1 & 0xFFF0) + 12 - data1[6];
@@ -221,7 +222,7 @@ void loop() {
     ThingSpeak.setField(1, currentTempDHT);
     ThingSpeak.setField(2, currentTempDS);
 
-    int APIwait = ThingSpeak.writeFields(channelID, writeAPIKey);
+    int APIwait = ThingSpeak.writeFields(channelID, APIKey);
     
     if (APIwait == 200) {
       Serial.println("Update successful");
