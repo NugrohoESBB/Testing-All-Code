@@ -1,45 +1,52 @@
-#include <DHT.h>
 #include <WiFi.h>
-#include <Wire.h>
-#include <Adafruit_Sensor.h>
+#include <ThingSpeak.h>
 #include <LiquidCrystal_I2C.h>
+#include <elapsedMillis.h>
+#include <Wire.h>
+#include <DHT.h>
 
-const char* ssid = "UGMURO-INET";
-const char* password = "Gepuk15000";
+const char* ssid              = "UGMURO-INET";
+const char* password          = "Gepuk15000";
+const char* writeAPIKey       = "L1JFXC6ULNYU577E";
+const unsigned long channelID = 2732118;
 
 // Define pins 
-#define PIR_PIN 14       
-#define DHT_PIN 2         
-#define SOUND_PIN 34       
-#define BUZZER_PIN 12      
-#define RELAY_IN1_PIN 5   
-#define RELAY_IN2_PIN 4    
-// #define SCL_PIN 22
-// #define SDA_PIN 21
+#define PIR_PIN         14
+#define DHT_PIN         2
+#define SOUND_PIN       34
+#define BUZZER_PIN      12
+#define RELAY_IN1_PIN   5
+#define RELAY_IN2_PIN   4
+//#define SCL_PIN 22
+//#define SDA_PIN 21
 
 // DHT sensor type 
-#define DHTTYPE DHT22
+#define DHTTYPE DHT11
 DHT dht(DHT_PIN, DHTTYPE);
 
 // LCD setup: Address 0x27, 16 columns and 2 rows
-LiquidCrystal_I2C lcd(0x26, 16, 2);
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 // Define thresholds
-float minTemp = 33.0;  
-float maxTemp = 35.0; 
-int soundThreshold = 500;  
+float minTemp = 33.0, maxTemp = 35.0, currentTemp, humidity;
+int soundThreshold = 500, soundLevel;
+bool fanOn = false, motionDetected;
 
-// Variables
-float currentTemp, humidity;
-int soundLevel;
-bool fanOn = false;
+unsigned long sensorInterval      = 500;
+unsigned long displayInterval     = 1000;
+unsigned long thingSpeakInterval  = 15000;
+
+WiFiClient client;
+elapsedMillis sensorMillis;
+elapsedMillis displayMillis;
+elapsedMillis thingSpeakMillis;
 
 void setup() {
   Serial.begin(115200);
   
   dht.begin();
-  //lcd.begin();
-  lcd.init();
+  lcd.begin();
+  //lcd.init();
   lcd.backlight();
 
   WiFi.mode(WIFI_STA);
@@ -50,6 +57,7 @@ void setup() {
     lcd.setCursor(0,0);
     lcd.print("Connecting..");
   }
+  ThingSpeak.begin(client);
 
   // Initialize PIR sensor
   pinMode(PIR_PIN, INPUT);
@@ -75,41 +83,49 @@ void setup() {
 }
 
 void loop() {
-  // Read temperature and humidity from DHT sensor
-  currentTemp = dht.readTemperature();
-  humidity = dht.readHumidity();
+  if (sensorMillis >= sensorInterval) {
+    currentTemp = dht.readTemperature();
+    humidity = dht.readHumidity();
+    soundLevel = analogRead(SOUND_PIN);
+    motionDetected = digitalRead(PIR_PIN);
+    delay(10);
 
-  // Check if readings are valid
-  if (isnan(currentTemp) || isnan(humidity)) {
-    Serial.println("Failed to read from DHT sensor!");
-    return;
+    Serial.println("Suhu DHT    : " + String(currentTemp) + "°C");
+    Serial.println("Humidity    : " + String(humidity) + "%");
+    Serial.println("Sound Level : " + String(soundLevel));
+
+    workingConditions();
+
+    sensorMillis = 0;
   }
 
-  // Print temperature and humidity to serial monitor
-  Serial.print("Temp: ");
-  Serial.print(currentTemp);
-  Serial.print(" C, Humidity: ");
-  Serial.print(humidity);
-  Serial.println(" %");
+  if (displayMillis >= displayInterval) {
+    lcd.setCursor(0, 0);
+    lcd.print("TempDHT : " + String(currentTemp) + "°C");
 
-  // Display temperature and humidity on the LCD
-  lcd.setCursor(0, 0);
-  lcd.print("Temp: ");
-  lcd.print(currentTemp);
-  lcd.print(" C  ");
-  
-  lcd.setCursor(0, 1);
-  lcd.print("Humid: ");
-  lcd.print(humidity);
-  lcd.print(" %  ");
+    lcd.setCursor(0, 1);
+    lcd.print("Humid   : " + String(humidity) + " %");
 
-  // Read sound sensor value (analog reading)
-  soundLevel = analogRead(SOUND_PIN);
-  Serial.print("Sound Level: ");
-  Serial.println(soundLevel);
+    displayMillis = 0;
+  }
 
-  // Read PIR sensor (motion detection)
-  bool motionDetected = digitalRead(PIR_PIN);
+  if (thingSpeakMillis >= thingSpeakInterval) {
+    ThingSpeak.setField(1, currentTemp);
+    ThingSpeak.setField(2, humidity);
+
+    int APIwait = ThingSpeak.writeFields(channelID, writeAPIKey);
+    
+    if (APIwait == 200) {
+      Serial.println("Update successful");
+    } else {
+      Serial.println("Error code: " + String(APIwait));
+    }
+
+    thingSpeakMillis = 0;
+  }
+}
+
+void workingConditions() {
   if (motionDetected) {
     Serial.println("Motion detected! Baby is moving excessively.");
     triggerBuzzer();
@@ -129,9 +145,6 @@ void loop() {
     Serial.println("Baby crying detected! Triggering buzzer.");
     triggerBuzzer();
   }
-
-  // Short delay before next loop
-  delay(1000);
 }
 
 // Function to activate the fan via relay
