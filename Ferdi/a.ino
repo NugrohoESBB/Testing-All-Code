@@ -27,7 +27,7 @@ OneWire ds1(DS_PIN);
 DHT dht(DHTPIN, DHTTYPE);
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-float temperature, currentTempDHT, currentTempDS;
+float currentTempDHT, currentTempDS;
 
 unsigned long sensorInterval      = 500;
 unsigned long displayInterval     = 1000;
@@ -104,7 +104,7 @@ void dsValue(void) {
     // 11 bit res, 375 ms
     else if (cfg1 == 0x40) raw1 = raw1 & ~1;
   }
-  
+
   currentTempDS = (float)raw1 / 16.0;
 }
 
@@ -183,7 +183,7 @@ void setup() {
 
 void loop() {
   if (sensorMillis >= sensorInterval) {
-    temperature = dht.readTemperature();
+    currentTempDHT = dht.readTemperature();
     dsValue();
     delay(10);
 
