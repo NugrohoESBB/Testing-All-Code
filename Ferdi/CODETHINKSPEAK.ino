@@ -34,7 +34,7 @@ String formattedTempDHT, formattedTempDS, formattedHumidity, formattedFahreinhei
 
 unsigned long sensorInterval      = 500;
 unsigned long displayInterval     = 1000;
-unsigned long thingSpeakInterval  = 10000;
+unsigned long thingSpeakInterval  = 15000;
 
 WiFiClient client;
 elapsedMillis sensorMillis;
@@ -117,8 +117,6 @@ void setup() {
     lcd.setCursor(0,0);
     lcd.print("Connecting..");
   }
-  Serial.print("Connected to WiFi ");
-  Serial.println(ssid);
   ThingSpeak.begin(client);
 
   lcd.setCursor(0, 0);
@@ -154,11 +152,11 @@ void loop() {
     Serial.println("Humidity    : " + String(humidity) + "%");
 
     if (currentTempDHT < 33.0 || currentTempDS < 33.0) {
-      activateHeating();
-      deactivateCooling();
+      //activateHeating();
+      //deactivateCooling();
     } else if (currentTempDHT > 35.0 || currentTempDS > 35.0) {
-      deactivateHeating();
-      activateCooling();
+      //deactivateHeating();
+      //activateCooling();
     }
 
     sensorMillis = 0;
