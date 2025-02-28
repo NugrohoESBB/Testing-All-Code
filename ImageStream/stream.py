@@ -1,36 +1,123 @@
-from flask import Flask, render_template, Response
-import cv2
+#include <WiFi.h>
+#include <ThingSpeak.h>
+#include <Adafruit_Sensor.h>
+#include <DHT.h>
+#include <LiquidCrystal_I2C.h>
+#include <elapsedMillis.h>
 
-app = Flask(__name__)
+#define DHTPIN 4
+#define DHTTYPE DHT21
+#define soilPin 34
+#define RELAY1_PIN 26
+#define RELAY2_PIN 25
+#define RELAY3_PIN 17
+#define RELAY4_PIN 16
 
-camera = cv2.VideoCapture(0)  # use 0 for web camera
-#  for cctv camera use rtsp://username:password@ip_address:554/user=username_password='password'_channel=channel_number_stream=0.sdp' instead of camera
-# for local webcam use cv2.VideoCapture(0)
+const char* ssid              = "UGMURO-INET";
+const char* password          = "Gepuk15000";
+const char* writeAPIKey       = "X0076DPBF0F1X2OE";
+const unsigned long channelID = 2847979;
 
-def gen_frames():  # generate frame by frame from camera
-    while True:
-        # Capture frame-by-frame
-        success, frame = camera.read()  # read the camera frame
-        if not success:
-            break
-        else:
-            ret, buffer = cv2.imencode('.jpg', frame)
-            frame = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  # concat frame one by one and show result
+unsigned long thingSpeakInterval  = 15000;
+unsigned long sensorInterval      = 500;
+unsigned long displayInterval     = 1000;
 
+WiFiClient client;
 
-@app.route('/video_feed')
-def video_feed():
-    #Video streaming route. Put this in the src attribute of an img tag
-    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+DHT dht(DHTPIN, DHTTYPE);
+elapsedMillis thingSpeakMillis;
+elapsedMillis sensorMillis;
+elapsedMillis displayMillis;
+LiquidCrystal_I2C lcd(0x27, 20, 4);
 
+int soilValue;
+int soilPercentage;
+float temperature;
+float humidity;
 
-@app.route('/')
-def index():
-    """Video streaming home page."""
-    return render_template('index.html')
+void setup() {
+  Serial.begin(115200);
 
+  lcd.begin();
+  lcd.backlight();
+  lcd.setCursor(3, 0);
+  lcd.print("Selamat Datang!");
+  lcd.setCursor(0, 1);
+  lcd.print("-");
+  lcd.setCursor(3, 3);
+  lcd.print("-- UG MURO --");
+  delay(5000);
+  lcd.clear();
+  delay(2000);
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0',port=5000)
+  pinMode(soilPin, INPUT);
+  dht.begin();
+
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println(".");
+  }
+  Serial.println("Connected to WiFi");
+  ThingSpeak.begin(client);
+
+  lcd.setCursor(5, 0);
+  lcd.print("Monitoring");
+  lcd.setCursor(0, 1);
+  lcd.print("Suhu   : ");
+  lcd.setCursor(0, 2);
+  lcd.print("K.Udara: ");
+  lcd.setCursor(0, 3);
+  lcd.print("K.Tanah: ");
+}
+
+void loop() {
+  if (sensorMillis >= sensorInterval) {
+    temperature = dht.readTemperature();
+    humidity = dht.readHumidity();
+    delay(10);
+    soilValue = analogRead(soilPin);
+    soilPercentage = map(soilValue, 4095, 0, 0, 100);
+    soilPercentage = constrain(soilPercentage, 0, 100);
+
+    Serial.print("Humidity: ");
+    Serial.print(humidity);
+    Serial.print("% \t");
+    Serial.print("Temperature : ");
+    Serial.print(temperature);
+    Serial.print("*C \t");
+    Serial.print("Soil: ");
+    Serial.print(soilPercentage);
+    Serial.println("%");
+
+    sensorMillis = 0;
+  }
+
+  if (displayMillis >= displayInterval) {
+    lcd.setCursor(0, 0);
+    lcd.print("Monitoring");
+
+    lcd.setCursor(0, 1);
+    lcd.print("Suhu: ", temperature, "C");
+    lcd.setCursor(0, 2);
+    lcd.print("Hum: ", humidity, "%");
+    lcd.setCursor(0, 3);
+    lcd.print("Soil: ", soilPercentage, "%");
+
+    displayMillis = 0;
+  }
+
+  if (thingSpeakMillis >= thingSpeakInterval) {
+    ThingSpeak.setField(1, temperature);
+    ThingSpeak.setField(2, humidity);
+    ThingSpeak.setField(3, soilPercentage);
+
+    int x = ThingSpeak.writeFields(channelID, writeAPIKey);
+    if (x == 200) {
+      Serial.println("Update successful.");
+    } else {
+      Serial.println("Update failed. HTTP error code: " + String(x));
+    }
+    thingSpeakMillis = 0;
+  }
+}
