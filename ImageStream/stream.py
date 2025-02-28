@@ -8,9 +8,9 @@
 #define DHTPIN 4
 #define DHTTYPE DHT21
 #define soilPin 34
-#define RELAY1_PIN 26
+#define RELAY1_PIN 26 // Kipas
 #define RELAY2_PIN 25
-#define RELAY3_PIN 17
+#define RELAY3_PIN 17 // Pompa
 #define RELAY4_PIN 16
 
 const char* ssid              = "UGMURO-INET";
@@ -31,14 +31,14 @@ elapsedMillis displayMillis;
 LiquidCrystal_I2C lcd(0x27, 20, 4);
 
 int soilValue;
-int soilPercentage;
+float soilPercentage;
 float temperature;
 float humidity;
 
 void setup() {
   Serial.begin(115200);
 
-  lcd.begin();
+  lcd.init();
   lcd.backlight();
   lcd.setCursor(3, 0);
   lcd.print("Selamat Datang!");
@@ -51,6 +51,10 @@ void setup() {
   delay(2000);
 
   pinMode(soilPin, INPUT);
+  pinMode(RELAY1_PIN, OUTPUT);
+  pinMode(RELAY2_PIN, OUTPUT);
+  pinMode(RELAY3_PIN, OUTPUT);
+  pinMode(RELAY4_PIN, OUTPUT);
   dht.begin();
 
   WiFi.begin(ssid, password);
@@ -60,15 +64,6 @@ void setup() {
   }
   Serial.println("Connected to WiFi");
   ThingSpeak.begin(client);
-
-  lcd.setCursor(5, 0);
-  lcd.print("Monitoring");
-  lcd.setCursor(0, 1);
-  lcd.print("Suhu   : ");
-  lcd.setCursor(0, 2);
-  lcd.print("K.Udara: ");
-  lcd.setCursor(0, 3);
-  lcd.print("K.Tanah: ");
 }
 
 void loop() {
@@ -98,11 +93,11 @@ void loop() {
     lcd.print("Monitoring");
 
     lcd.setCursor(0, 1);
-    lcd.print("Suhu: ", temperature, "C");
+    lcd.print("Suhu: " + String(temperature) + "°C");
     lcd.setCursor(0, 2);
-    lcd.print("Hum: ", humidity, "%");
+    lcd.print("Hum: " + String(humidity) + "%");
     lcd.setCursor(0, 3);
-    lcd.print("Soil: ", soilPercentage, "%");
+    lcd.print("Soil: " + String(soilPercentage) + "%");
 
     displayMillis = 0;
   }
@@ -119,5 +114,19 @@ void loop() {
       Serial.println("Update failed. HTTP error code: " + String(x));
     }
     thingSpeakMillis = 0;
+  }
+}
+
+void conditionRelay() {
+  if (temperature > 20) {
+    digitalWrite(RELAY1_PIN, LOW);
+  } else {
+    digitalWrite(RELAY1_PIN, HIGH);
+  }
+
+  if (soilPercentage > 20) {
+    digitalWrite(RELAY3_PIN, LOW);
+  } else {
+    digitalWrite(RELAY3_PIN, LOW);
   }
 }
