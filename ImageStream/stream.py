@@ -120,13 +120,17 @@ void loop() {
 void conditionRelay() {
   if (temperature > 20) {
     digitalWrite(RELAY1_PIN, LOW);
+    digitalWrite(RELAY2_PIN, LOW);
   } else {
     digitalWrite(RELAY1_PIN, HIGH);
+    digitalWrite(RELAY2_PIN, HIGH);
   }
 
   if (soilPercentage > 20) {
     digitalWrite(RELAY3_PIN, LOW);
+    digitalWrite(RELAY4_PIN, LOW);
   } else {
-    digitalWrite(RELAY3_PIN, LOW);
+    digitalWrite(RELAY3_PIN, HIGH);
+    digitalWrite(RELAY4_PIN, HIGH);
   }
 }
