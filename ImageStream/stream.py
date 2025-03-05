@@ -86,7 +86,7 @@ void loop() {
 
   if (sensorMillis >= sensorInterval) {
     temperature = dht.readTemperature();
-    humidity = dht.readHumidity();
+    humidity    = dht.readHumidity();
     delay(10);
     soilValue = analogRead(soilPin);
     soilPercentage = map(soilValue, 4095, 0, 0, 100);
@@ -107,7 +107,7 @@ void loop() {
     } else {
       Serial.println("Update failed. HTTP error code: " + String(APIhandler));
     }
-    
+
     thingSpeakMillis = 0;
   }
 }
@@ -116,9 +116,16 @@ void lcdOutput() {
   lcd.setCursor(0, 0);
   lcd.print("Monitoring");
   lcd.setCursor(0, 1);
+  lcd.print("                    ");
+  lcd.setCursor(0, 2);
+  lcd.print("                    ");
+  lcd.setCursor(0, 3);
+  lcd.print("                    ");
+  
+  lcd.setCursor(0, 1);
   lcd.print("Suhu: " + String(temperature) + "°C");
   lcd.setCursor(0, 2);
-  lcd.print("Hum: " + String(humidity) + "%");
+  lcd.print("Hum : " + String(humidity) + "%");
   lcd.setCursor(0, 3);
   lcd.print("Soil: " + String(soilPercentage) + "%");
 }
