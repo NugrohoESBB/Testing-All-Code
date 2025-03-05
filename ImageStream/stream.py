@@ -80,7 +80,7 @@ void loop() {
   }
 
   if (lcdMillis >= lcdInterval) {
-    lcdOutput()
+    lcdOutput();
     lcdMillis = 0;
   }
 
