@@ -100,6 +100,8 @@ void loop() {
     ThingSpeak.setField(1, temperature);
     ThingSpeak.setField(2, humidity);
     ThingSpeak.setField(3, soilPercentage);
+    ThingSpeak.setField(4, RELAY1_PIN);
+    ThingSpeak.setField(5, RELAY3_PIN);
 
     APIhandler = ThingSpeak.writeFields(channelID, writeAPIKey);
     if (APIhandler == 200) {
