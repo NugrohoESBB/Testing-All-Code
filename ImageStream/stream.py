@@ -125,7 +125,7 @@ void lcdOutput() {
   lcd.print("                    ");
   
   lcd.setCursor(0, 1);
-  lcd.print("Suhu: " + String(temperature) + "°C");
+  lcd.print("Suhu: " + String(temperature) + "*C");
   lcd.setCursor(0, 2);
   lcd.print("Hum : " + String(humidity) + "%");
   lcd.setCursor(0, 3);
