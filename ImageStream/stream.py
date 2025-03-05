@@ -107,6 +107,7 @@ void loop() {
     } else {
       Serial.println("Update failed. HTTP error code: " + String(APIhandler));
     }
+    
     thingSpeakMillis = 0;
   }
 }
