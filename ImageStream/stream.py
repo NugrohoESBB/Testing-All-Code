@@ -5,13 +5,13 @@
 #include <elapsedMillis.h>
 #include <DHT.h>
 
-#define DHTPIN 4
-#define DHTTYPE DHT21
-#define soilPin 34
-#define RELAY1_PIN 26 // Kipas
-#define RELAY2_PIN 25
-#define RELAY3_PIN 17 // Pompa
-#define RELAY4_PIN 16
+#define DHTPIN 		4
+#define DHTTYPE 	DHT21
+#define soilPin 	34
+#define RELAY1_PIN 	26 // Kipas
+#define RELAY2_PIN 	25
+#define RELAY3_PIN 	17 // Pompa
+#define RELAY4_PIN 	16
 
 const char* ssid              = "UGMURO-INET";
 const char* password          = "Gepuk15000";
