@@ -1,4 +1,3 @@
-
 #include <WiFi.h>
 #include <ThingSpeak.h>
 #include <Adafruit_Sensor.h>
@@ -16,8 +15,8 @@
 
 const char* ssid              = "UGMURO-INET";
 const char* password          = "Gepuk15000";
-const char* writeAPIKey       = "X0076DPBF0F1X2OE";
-const unsigned long channelID = 2847979;
+const char* writeAPIKey       = "";
+const unsigned long channelID = ;
 
 float soilPercentage, temperature, humidity;
 int soilValue, APIhandler, statusFanRelay, statusPumpRelay;
@@ -117,7 +116,7 @@ void loop() {
 
 void lcdOutput() {
   lcd.setCursor(0, 0);
-  lcd.print("Monitoring");
+  lcd.print("     Monitoring     ");
   lcd.setCursor(0, 1);
   lcd.print("                    ");
   lcd.setCursor(0, 2);
