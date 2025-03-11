@@ -1,3 +1,4 @@
+
 #include <WiFi.h>
 #include <ThingSpeak.h>
 #include <Adafruit_Sensor.h>
@@ -18,15 +19,15 @@ const char* password          = "Gepuk15000";
 const char* writeAPIKey       = "X0076DPBF0F1X2OE";
 const unsigned long channelID = 2847979;
 
-int soilValue, APIhandler;
 float soilPercentage, temperature, humidity;
+int soilValue, APIhandler, statusFanRelay, statusPumpRelay;
 
 unsigned long thingSpeakInterval = 15000, sensorInterval = 500, lcdInterval = 2000, serialInterval = 2000;
 
 WiFiClient client;
 DHT dht(DHTPIN, DHTTYPE);
-elapsedMillis thingSpeakMillis, sensorMillis, lcdMillis, serialMillis;
 LiquidCrystal_I2C lcd(0x27, 20, 4);
+elapsedMillis thingSpeakMillis, sensorMillis, lcdMillis, serialMillis;
 
 void setup() {
   Serial.begin(115200);
@@ -100,12 +101,12 @@ void loop() {
     ThingSpeak.setField(1, temperature);
     ThingSpeak.setField(2, humidity);
     ThingSpeak.setField(3, soilPercentage);
-    ThingSpeak.setField(4, RELAY1_PIN);
-    ThingSpeak.setField(5, RELAY3_PIN);
+    ThingSpeak.setField(4, statusFanRelay);
+    ThingSpeak.setField(5, statusPumpRelay);
 
     APIhandler = ThingSpeak.writeFields(channelID, writeAPIKey);
     if (APIhandler == 200) {
-      Serial.println("Update successful.");
+      Serial.println("Update successful...");
     } else {
       Serial.println("Update failed. HTTP error code: " + String(APIhandler));
     }
@@ -141,13 +142,17 @@ void serialOutput() {
 void conditionRelay() {
   if (temperature > 20.0) {
     digitalWrite(RELAY1_PIN, LOW);
+    statusFanRelay = 1;
   } else {
     digitalWrite(RELAY1_PIN, HIGH);
+    statusFanRelay = 0;
   }
 
   if (soilPercentage > 50.0) {
     digitalWrite(RELAY3_PIN, LOW);
+    statusPumpRelay = 1;
   } else {
     digitalWrite(RELAY3_PIN, HIGH);
+    statusPumpRelay = 0;
   }
 }
