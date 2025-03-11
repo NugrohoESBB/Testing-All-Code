@@ -13,10 +13,16 @@
 #define RELAY3_PIN 	17 // Pompa
 #define RELAY4_PIN 	16
 
-const char* ssid              = "UGMURO-INET";
-const char* password          = "Gepuk15000";
-const char* writeAPIKey       = "";
-const unsigned long channelID = ;
+const char* ssid              		= "UGMURO-INET";
+const char* password          		= "Gepuk15000";
+
+// API TS ferdi
+const char* writeAPIKeyJKL       	= "";
+const unsigned long channelIDJKL 	= ;
+
+// API TS jesen
+const char* writeAPIKeyMCS       	= "";
+const unsigned long channelIDMCS 	= ;
 
 float soilPercentage, temperature, humidity;
 int soilValue, APIhandler, statusFanRelay, statusPumpRelay;
@@ -103,7 +109,22 @@ void loop() {
     ThingSpeak.setField(4, statusFanRelay);
     ThingSpeak.setField(5, statusPumpRelay);
 
-    APIhandler = ThingSpeak.writeFields(channelID, writeAPIKey);
+    APIhandler = ThingSpeak.writeFields(channelIDJKL, writeAPIKeyJKL);
+    if (APIhandler == 200) {
+      Serial.println("Update successful...");
+    } else {
+      Serial.println("Update failed. HTTP error code: " + String(APIhandler));
+    }
+
+    delay(1000);
+
+    ThingSpeak.setField(1, temperature);
+    ThingSpeak.setField(2, humidity);
+    ThingSpeak.setField(3, soilPercentage);
+    ThingSpeak.setField(4, statusFanRelay);
+    ThingSpeak.setField(5, statusPumpRelay);
+
+    APIhandler = ThingSpeak.writeFields(channelIDMCS, writeAPIKeyMCS);
     if (APIhandler == 200) {
       Serial.println("Update successful...");
     } else {
