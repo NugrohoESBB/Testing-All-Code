@@ -1,11 +1,230 @@
-html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Stream</title>
-</head>
-<body>
-    <h1>Video Stream</h1>
-    <img src="{{ url('video_feed') }}" width="640" height="480">
-</body>
-</html>
+#include <WiFi.h>
+#include <ThingSpeak.h>
+#include <Adafruit_Sensor.h>
+#include <LiquidCrystal_I2C.h>
+#include <elapsedMillis.h>
+#include <DHT.h>
+
+#define DHTPIN 		4
+#define DHTTYPE 	DHT21
+#define soilPin 	34
+#define RELAY1_PIN 	26 // Kipas
+#define RELAY2_PIN 	25
+#define RELAY3_PIN 	17 // Pompa
+#define RELAY4_PIN 	16
+
+const char* ssid              		= "UGMURO-INET";
+const char* password          		= "Gepuk15000";
+
+const char* API1              	= "5DNSKIKKO5PQCCC0";
+const unsigned long channelID1 	= 2870472;
+
+const char* API2              	= "Y7FMPVTSWD3TCWUS";
+const unsigned long channelID2 	= 2145186;
+
+const char* API3                = "424QAPTD0UTXU0PB";
+const unsigned long channelID3  = 2870493;
+
+const char* API4                = "30WPJHY2YR4053NW";
+const unsigned long channelID4  = 2870508;
+
+const char* API5                = "97SK39KKUNSV4AN3";
+const unsigned long channelID5  = 2870513;
+
+float soilPercentage, temperature, humidity;
+int soilValue, APIhandler1, APIhandler2, APIhandler3, APIhandler4, APIhandler5, statusFanRelay, statusPumpRelay;
+
+unsigned long thingSpeakInterval = 15000, sensorInterval = 500, lcdInterval = 2000, serialInterval = 2000;
+
+WiFiClient client;
+DHT dht(DHTPIN, DHTTYPE);
+LiquidCrystal_I2C lcd(0x27, 20, 4);
+elapsedMillis thingSpeakMillis, sensorMillis, lcdMillis, serialMillis;
+
+void setup() {
+  Serial.begin(115200);
+
+  pinMode(soilPin, INPUT);
+  pinMode(RELAY1_PIN, OUTPUT);
+  pinMode(RELAY2_PIN, OUTPUT);
+  pinMode(RELAY3_PIN, OUTPUT);
+  pinMode(RELAY4_PIN, OUTPUT);
+
+  Wire.begin();
+  lcd.init();
+  lcd.backlight();
+
+  lcd.setCursor(0, 0);
+  lcd.print("   INITIATION....   ");
+
+  delay (1000);
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+    lcd.setCursor(0, 1);
+    lcd.print("   Connecting....   ");
+  }
+
+  lcd.setCursor(0, 1);
+  lcd.print("                    ");
+  lcd.setCursor(0, 2);
+  lcd.print("  WiFi: " + String (ssid));
+
+  delay(1000);
+
+  dht.begin();
+  ThingSpeak.begin(client);
+
+  lcd.setCursor(0, 3);
+  lcd.print("                    ");
+  lcd.setCursor(0, 3);
+  lcd.print("     ALL CLEAR!     ");
+  delay(2000);
+  lcd.clear();
+}
+
+void loop() {
+  if (serialMillis >= serialInterval) {
+    serialOutput();
+    serialMillis = 0;
+  }
+
+  if (lcdMillis >= lcdInterval) {
+    lcdOutput();
+    lcdMillis = 0;
+  }
+
+  if (sensorMillis >= sensorInterval) {
+    temperature = dht.readTemperature();
+    humidity    = dht.readHumidity();
+    delay(10);
+    soilValue = analogRead(soilPin);
+    soilPercentage = map(soilValue, 4095, 0, 0, 100);
+    soilPercentage = constrain(soilPercentage, 0, 100);
+    conditionRelay();
+
+    sensorMillis = 0;
+  }
+
+  if (thingSpeakMillis >= thingSpeakInterval) {
+    ThingSpeak.setField(1, temperature);
+    ThingSpeak.setField(2, humidity);
+    ThingSpeak.setField(3, soilPercentage);
+    ThingSpeak.setField(4, statusFanRelay);
+    ThingSpeak.setField(5, statusPumpRelay);
+
+    APIhandler1 = ThingSpeak.writeFields(channelID1, API1);
+    if (APIhandler1 == 200) {
+      Serial.println("Update successful...");
+    } else {
+      Serial.println("Update failed. HTTP error code: " + String(APIhandler1));
+    }
+
+    delay(1000);
+
+    ThingSpeak.setField(1, temperature);
+    ThingSpeak.setField(2, humidity);
+    ThingSpeak.setField(3, soilPercentage);
+    ThingSpeak.setField(4, statusFanRelay);
+    ThingSpeak.setField(5, statusPumpRelay);
+
+    APIhandler2 = ThingSpeak.writeFields(channelID2, API2);
+    if (APIhandler2 == 200) {
+      Serial.println("Update successful...");
+    } else {
+      Serial.println("Update failed. HTTP error code: " + String(APIhandler2));
+    }
+
+    delay(1000);
+
+    ThingSpeak.setField(1, temperature);
+    ThingSpeak.setField(2, humidity);
+    ThingSpeak.setField(3, soilPercentage);
+    ThingSpeak.setField(4, statusFanRelay);
+    ThingSpeak.setField(5, statusPumpRelay);
+
+    APIhandler3 = ThingSpeak.writeFields(channelID3, API3);
+    if (APIhandler3 == 200) {
+      Serial.println("Update successful...");
+    } else {
+      Serial.println("Update failed. HTTP error code: " + String(APIhandler3));
+    }
+
+    delay(1000);
+
+    ThingSpeak.setField(1, temperature);
+    ThingSpeak.setField(2, humidity);
+    ThingSpeak.setField(3, soilPercentage);
+    ThingSpeak.setField(4, statusFanRelay);
+    ThingSpeak.setField(5, statusPumpRelay);
+
+    APIhandler4 = ThingSpeak.writeFields(channelID4, API4);
+    if (APIhandler4 == 200) {
+      Serial.println("Update successful...");
+    } else {
+      Serial.println("Update failed. HTTP error code: " + String(APIhandler4));
+    }
+
+    delay(1000);
+
+    ThingSpeak.setField(1, temperature);
+    ThingSpeak.setField(2, humidity);
+    ThingSpeak.setField(3, soilPercentage);
+    ThingSpeak.setField(4, statusFanRelay);
+    ThingSpeak.setField(5, statusPumpRelay);
+
+    APIhandler5 = ThingSpeak.writeFields(channelID5, API5);
+    if (APIhandler5 == 200) {
+      Serial.println("Update successful...");
+    } else {
+      Serial.println("Update failed. HTTP error code: " + String(APIhandler5));
+    }
+
+    thingSpeakMillis = 0;
+  }
+}
+
+void lcdOutput() {
+  lcd.setCursor(0, 0);
+  lcd.print("     Monitoring     ");
+  lcd.setCursor(0, 1);
+  lcd.print("                    ");
+  lcd.setCursor(0, 2);
+  lcd.print("                    ");
+  lcd.setCursor(0, 3);
+  lcd.print("                    ");
+  
+  lcd.setCursor(0, 1);
+  lcd.print("Suhu: " + String(temperature) + "*C");
+  lcd.setCursor(0, 2);
+  lcd.print("Hum : " + String(humidity) + "%");
+  lcd.setCursor(0, 3);
+  lcd.print("Soil: " + String(soilPercentage) + "%");
+}
+
+void serialOutput() {
+  Serial.println("Temperature : " + String(temperature) + "*C");
+  Serial.println("Humidity    : " + String(humidity) + "%");
+  Serial.println("Soil        : " + String(soilPercentage) + "%");
+}
+
+void conditionRelay() {
+  if (temperature > 20.0) {
+    digitalWrite(RELAY1_PIN, LOW);
+    statusFanRelay = 1;
+  } else {
+    digitalWrite(RELAY1_PIN, HIGH);
+    statusFanRelay = 0;
+  }
+
+  if (soilPercentage > 50.0) {
+    digitalWrite(RELAY3_PIN, LOW);
+    statusPumpRelay = 1;
+  } else {
+    digitalWrite(RELAY3_PIN, HIGH);
+    statusPumpRelay = 0;
+  }
+}
